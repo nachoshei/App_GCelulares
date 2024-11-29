@@ -142,11 +142,22 @@ lista_clientes = Listbox(frame_seleccion, width=30)
 lista_clientes.grid(row=1, column=0, padx=10)
 lista_clientes.bind("<<ListboxSelect>>", cargar_celulares)
 
-# Listbox para seleccionar celular del cliente (sin cambios)
+# Listbox para seleccionar celular del cliente (corregido)
 Label(frame_seleccion, text="Selecciona un Celular:").grid(row=0, column=1)
 lista_celulares = Listbox(frame_seleccion, width=30)
 lista_celulares.grid(row=1, column=1, padx=10)
-lista_celulares.bind("<<ListboxSelect>>", lambda e: globals().update({'id_celular_seleccionado': lista_celulares.get(lista_celulares.curselection()).split(" - ")[0]}))
+lista_celulares.bind("<<ListboxSelect>>", update_selected_celular)
+
+def update_selected_celular(event=None):
+    global id_celular_seleccionado
+    try:
+        seleccion = lista_celulares.curselection()
+        if seleccion:
+            id_celular_seleccionado = lista_celulares.get(seleccion[0]).split(" - ")[0]
+        else:
+            id_celular_seleccionado = None
+    except Exception as e:
+        messagebox.showerror("Error", f"Ocurrió un error al seleccionar celular: {e}")
 
 # Widgets para los datos de la reparación (sin cambios)
 Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
