@@ -15,11 +15,16 @@ def cargar_clientes():
         lista_clientes.insert(END, f"{cliente[0]} - {cliente[1]}")
 
 # Cargar celulares del cliente seleccionado
+# Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
     try:
         lista_celulares.delete(0, END)
-        seleccion = lista_clientes.get(lista_clientes.curselection())
-        id_cliente = seleccion.split(" - ")[0]
+        seleccion = lista_clientes.curselection()  # Obtener selección
+        if not seleccion:  # Validar si hay una selección
+            messagebox.showwarning("Advertencia", "Por favor, selecciona un cliente de la lista.")
+            return
+        seleccion_texto = lista_clientes.get(seleccion)
+        id_cliente = seleccion_texto.split(" - ")[0]
         conn = conectar_db()
         cursor = conn.cursor()
         cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente,))
