@@ -1,6 +1,7 @@
 from config import conectar_db
 from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebox, Frame
-
+from tkcalendar import Calendar
+from datetime import datetime
 
 # Cargar clientes en el Listbox
 def cargar_clientes():
@@ -13,20 +14,21 @@ def cargar_clientes():
     for cliente in clientes:
         lista_clientes.insert(END, f"{cliente[0]} - {cliente[1]}")
 
-
 # Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
-    lista_celulares.delete(0, END)
-    seleccion = lista_clientes.get(lista_clientes.curselection())
-    id_cliente = seleccion.split(" - ")[0]
-    conn = conectar_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente,))
-    celulares = cursor.fetchall()
-    conn.close()
-    for celular in celulares:
-        lista_celulares.insert(END, f"{celular[0]} - {celular[1]} {celular[2]}")
-
+    try:
+        lista_celulares.delete(0, END)
+        seleccion = lista_clientes.get(lista_clientes.curselection())
+        id_cliente = seleccion.split(" - ")[0]
+        conn = conectar_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente,))
+        celulares = cursor.fetchall()
+        conn.close()
+        for celular in celulares:
+            lista_celulares.insert(END, f"{celular[0]} - {celular[1]} {celular[2]}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Ocurrió un error al cargar celulares: {e}")
 
 # Crear una nueva reparación
 def crear_reparacion():
@@ -52,7 +54,6 @@ def crear_reparacion():
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
-
 # Mostrar reparaciones
 def mostrar_reparaciones():
     lista_reparaciones.delete(0, END)
@@ -71,7 +72,6 @@ def mostrar_reparaciones():
         lista_reparaciones.insert(END, f"{reparacion[0]} - Cliente: {reparacion[1]} - Celular: {reparacion[2]} {reparacion[3]} - "
                                        f"Ingreso: {reparacion[4]} - Est. Entrega: {reparacion[5]} - Estado: {reparacion[6]}")
 
-
 # Limpiar campos
 def limpiar_campos():
     entry_fecha_ingreso.delete(0, END)
@@ -80,11 +80,23 @@ def limpiar_campos():
     lista_clientes.selection_clear(0, END)
     lista_celulares.delete(0, END)
 
+# Seleccionar fecha estimada de entrega con un calendario
+def abrir_calendario():
+    def seleccionar_fecha():
+        entry_fecha_estimada_entrega.delete(0, END)
+        entry_fecha_estimada_entrega.insert(0, cal.selection_get().strftime("%Y-%m-%d"))
+        top_cal.destroy()
+
+    top_cal = Tk()
+    top_cal.title("Seleccionar Fecha")
+    cal = Calendar(top_cal, date_pattern="yyyy-mm-dd", selectmode="day")
+    cal.pack(pady=10)
+    Button(top_cal, text="Seleccionar", command=seleccionar_fecha).pack(pady=10)
 
 # Configuración de la ventana principal
 root = Tk()
 root.title("Gestión de Reparaciones")
-root.geometry("700x700")
+root.geometry("800x700")
 
 # Frame para selección de cliente y celular
 frame_seleccion = Frame(root)
@@ -104,11 +116,15 @@ lista_celulares.grid(row=1, column=1, padx=10)
 # Widgets para los datos de la reparación
 Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
 entry_fecha_ingreso = Entry(root)
+entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))  # Fecha actual
 entry_fecha_ingreso.pack()
 
 Label(root, text="Fecha Estimada de Entrega (YYYY-MM-DD):").pack()
 entry_fecha_estimada_entrega = Entry(root)
 entry_fecha_estimada_entrega.pack()
+
+# Botón de calendario junto a la fecha estimada
+Button(root, text="📅", command=abrir_calendario).pack()
 
 Label(root, text="Estado:").pack()
 entry_estado = Entry(root)
