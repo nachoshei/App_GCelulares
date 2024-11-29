@@ -15,7 +15,6 @@ def cargar_clientes():
         lista_clientes.insert(END, f"{cliente[0]} - {cliente[1]}")
 
 # Cargar celulares del cliente seleccionado
-# Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
     try:
         lista_celulares.delete(0, END)
