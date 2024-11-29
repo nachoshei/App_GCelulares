@@ -15,7 +15,6 @@ def cargar_clientes():
         lista_clientes.insert(END, f"{cliente[0]} - {cliente[1]}")
 
 # Cargar celulares del cliente seleccionado
-# Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
     try:
         lista_celulares.delete(0, END)
@@ -94,7 +93,7 @@ def abrir_calendario():
 
     top_cal = Tk()
     top_cal.title("Seleccionar Fecha")
-    cal = Calendar(top_cal, date_pattern="dd-mm-yyyy", selectmode="day")
+    cal = Calendar(top_cal, date_pattern="yyyy-mm-dd", selectmode="day")
     cal.pack(pady=10)
     Button(top_cal, text="Seleccionar", command=seleccionar_fecha).pack(pady=10)
 
@@ -119,12 +118,12 @@ lista_celulares = Listbox(frame_seleccion, width=30)
 lista_celulares.grid(row=1, column=1, padx=10)
 
 # Widgets para los datos de la reparación
-Label(root, text="Fecha Ingreso (DD-MM-YYYY):").pack()
+Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
 entry_fecha_ingreso = Entry(root)
-entry_fecha_ingreso.insert(0, datetime.now().strftime("%d-%m-%y"))  # Fecha actual
+entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))  # Fecha actual
 entry_fecha_ingreso.pack()
 
-Label(root, text="Fecha Estimada de Entrega (DD-MM-YYYY):").pack()
+Label(root, text="Fecha Estimada de Entrega (YYYY-MM-DD):").pack()
 entry_fecha_estimada_entrega = Entry(root)
 entry_fecha_estimada_entrega.pack()
 
