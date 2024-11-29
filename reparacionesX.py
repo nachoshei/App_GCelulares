@@ -9,7 +9,7 @@ id_celular_seleccionado = None
 
 # Cargar clientes en el Listbox
 def cargar_clientes():
-    lista_clientes.delete(0, END)
+    #lista_clientes.delete(0, END)
     conn = conectar_db()
     cursor = conn.cursor()
     cursor.execute("SELECT id_cliente, nombre FROM clientes")
@@ -136,18 +136,6 @@ root.geometry("800x700")
 frame_seleccion = Frame(root)
 frame_seleccion.pack(pady=10)
 
-# Listbox para seleccionar cliente (sin cambios)
-Label(frame_seleccion, text="Selecciona un Cliente:").grid(row=0, column=0)
-lista_clientes = Listbox(frame_seleccion, width=30)
-lista_clientes.grid(row=1, column=0, padx=10)
-lista_clientes.bind("<<ListboxSelect>>", cargar_celulares)
-
-# Listbox para seleccionar celular del cliente (corregido)
-Label(frame_seleccion, text="Selecciona un Celular:").grid(row=0, column=1)
-lista_celulares = Listbox(frame_seleccion, width=30)
-lista_celulares.grid(row=1, column=1, padx=10)
-lista_celulares.bind("<<ListboxSelect>>", update_selected_celular)
-
 def update_selected_celular(event=None):
     global id_celular_seleccionado
     try:
@@ -158,6 +146,12 @@ def update_selected_celular(event=None):
             id_celular_seleccionado = None
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al seleccionar celular: {e}")
+
+# Listbox para seleccionar cliente (corregido)
+Label(frame_seleccion, text="Selecciona un Celular:").grid(row=0, column=1)
+lista_celulares = Listbox(frame_seleccion, width=30)
+lista_celulares.grid(row=1, column=1, padx=10)
+lista_celulares.bind("<<ListboxSelect>>", update_selected_celular)
 
 # Widgets para los datos de la reparación (sin cambios)
 Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
