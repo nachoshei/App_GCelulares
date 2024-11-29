@@ -3,8 +3,9 @@ from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebo
 from tkcalendar import Calendar
 from datetime import datetime
 
-# Variable global para almacenar el ID del cliente seleccionado
+# Variables globales para almacenar IDs seleccionados
 id_cliente_seleccionado = None
+id_celular_seleccionado = None
 
 # Cargar clientes en el Listbox
 def cargar_clientes():
@@ -19,20 +20,21 @@ def cargar_clientes():
 
 # Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
-    global id_cliente_seleccionado
+    global id_cliente_seleccionado, id_celular_seleccionado
     try:
+        # Guardar la selección actual del celular para mantenerla si es posible
+        selected_celular = lista_celulares.curselection() if lista_celulares.curselection() else None
         lista_celulares.delete(0, END)
-        seleccion = lista_clientes.curselection()
         
-        # Asegurarse de que solo se actualice el cliente si cambia la selección
+        seleccion = lista_clientes.curselection()
         if seleccion:
             seleccion_texto = lista_clientes.get(seleccion)
-            id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Guardar ID del cliente seleccionado
+            id_cliente_seleccionado = seleccion_texto.split(" - ")[0]
         else:
             id_cliente_seleccionado = None
+            id_celular_seleccionado = None
             return
 
-        # Verificar si hay un cliente seleccionado antes de cargar celulares
         if id_cliente_seleccionado:
             conn = conectar_db()
             cursor = conn.cursor()
@@ -41,21 +43,26 @@ def cargar_celulares(event):
             conn.close()
             for celular in celulares:
                 lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
+            
+            # Restaurar la selección del celular si es posible
+            if selected_celular and selected_celular[0] < lista_celulares.size():
+                lista_celulares.selection_set(selected_celular[0])
+                id_celular_seleccionado = lista_celulares.get(selected_celular[0]).split(" - ")[0]
+            else:
+                id_celular_seleccionado = None
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al cargar celulares: {e}")
 
 # Crear una nueva reparación
 def crear_reparacion():
+    global id_celular_seleccionado
     try:
-        # Verificar si hay un celular seleccionado
-        seleccion = lista_celulares.curselection()
-        if not seleccion:
+        # Usar la selección guardada en lugar de obtenerla nuevamente
+        if id_celular_seleccionado is None:
             messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
             return
         
-        # Obtener los datos del celular seleccionado
-        seleccion_celular = lista_celulares.get(seleccion)
-        id_celular = seleccion_celular.split(" - ")[0]
+        id_celular = id_celular_seleccionado
 
         # Obtener los datos de la reparación
         fecha_ingreso = entry_fecha_ingreso.get()
@@ -79,7 +86,7 @@ def crear_reparacion():
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error: {e}")
 
-# Mostrar reparaciones
+# Mostrar reparaciones (sin cambios)
 def mostrar_reparaciones():
     lista_reparaciones.delete(0, END)
     conn = conectar_db()
@@ -99,15 +106,15 @@ def mostrar_reparaciones():
 
 # Limpiar campos
 def limpiar_campos():
-    global id_cliente_seleccionado
+    global id_cliente_seleccionado, id_celular_seleccionado
     entry_fecha_ingreso.delete(0, END)
     entry_fecha_estimada_entrega.delete(0, END)
     entry_estado.delete(0, END)
-    lista_clientes.selection_clear(0, END)
-    lista_celulares.delete(0, END)
+    # No limpiar la selección de clientes y celulares aquí, solo al confirmar el registro
     id_cliente_seleccionado = None
+    id_celular_seleccionado = None
 
-# Seleccionar fecha estimada de entrega con un calendario
+# Seleccionar fecha estimada de entrega con un calendario (sin cambios)
 def abrir_calendario():
     def seleccionar_fecha():
         entry_fecha_estimada_entrega.delete(0, END)
@@ -120,27 +127,28 @@ def abrir_calendario():
     cal.pack(pady=10)
     Button(top_cal, text="Seleccionar", command=seleccionar_fecha).pack(pady=10)
 
-# Configuración de la ventana principal
+# Configuración de la ventana principal (sin cambios)
 root = Tk()
 root.title("Gestión de Reparaciones")
 root.geometry("800x700")
 
-# Frame para selección de cliente y celular
+# Frame para selección de cliente y celular (sin cambios)
 frame_seleccion = Frame(root)
 frame_seleccion.pack(pady=10)
 
-# Listbox para seleccionar cliente
+# Listbox para seleccionar cliente (sin cambios)
 Label(frame_seleccion, text="Selecciona un Cliente:").grid(row=0, column=0)
 lista_clientes = Listbox(frame_seleccion, width=30)
 lista_clientes.grid(row=1, column=0, padx=10)
 lista_clientes.bind("<<ListboxSelect>>", cargar_celulares)
 
-# Listbox para seleccionar celular del cliente
+# Listbox para seleccionar celular del cliente (sin cambios)
 Label(frame_seleccion, text="Selecciona un Celular:").grid(row=0, column=1)
 lista_celulares = Listbox(frame_seleccion, width=30)
 lista_celulares.grid(row=1, column=1, padx=10)
+lista_celulares.bind("<<ListboxSelect>>", lambda e: globals().update({'id_celular_seleccionado': lista_celulares.get(lista_celulares.curselection()).split(" - ")[0]}))
 
-# Widgets para los datos de la reparación
+# Widgets para los datos de la reparación (sin cambios)
 Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
 entry_fecha_ingreso = Entry(root)
 entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))
