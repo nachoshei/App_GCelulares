@@ -8,6 +8,8 @@ from datetime import datetime
 id_cliente_seleccionado = None
 id_celular_seleccionado = None
 
+# Funciones
+
 # Cargar clientes en el Listbox
 def cargar_clientes():
     lista_clientes.delete(0, END)
@@ -21,12 +23,12 @@ def cargar_clientes():
 
 # Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
-    global id_cliente_seleccionado
-    lista_celulares.delete(0, END)
+    global id_cliente_seleccionado, id_celular_seleccionado
     seleccion = lista_clientes.curselection()
-    
+
     if not seleccion:
         id_cliente_seleccionado = None
+        lista_celulares.delete(0, END)
         return
 
     seleccion_texto = lista_clientes.get(seleccion)
@@ -36,14 +38,24 @@ def cargar_celulares(event):
     cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente_seleccionado,))
     celulares = cursor.fetchall()
     conn.close()
+
+    # Limpiar y rellenar lista de celulares
+    lista_celulares.delete(0, END)
     for celular in celulares:
         lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
 
-# Crear una nueva reparación
+    # Mantener selección previa si existe
+    if id_celular_seleccionado:
+        for index in range(lista_celulares.size()):
+            if id_celular_seleccionado in lista_celulares.get(index):
+                lista_celulares.select_set(index)
+                break
+
+# Registrar reparación
 def crear_reparacion():
     global id_celular_seleccionado
     seleccion = lista_celulares.curselection()
-    
+
     if not seleccion:
         messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
         return
@@ -124,6 +136,42 @@ root = Tk()
 root.title("Gestión de Reparaciones")
 root.geometry("900x600")
 
+# Frame para la sección de reparaciones
+frame_reparaciones = Frame(root)
+frame_reparaciones.pack(pady=10, fill="both", expand=True)
+
+# Crear Treeview para mostrar reparaciones
+tree_reparaciones = Treeview(
+    frame_reparaciones,
+    columns=("ID", "Cliente", "Marca", "Modelo", "Fecha Ingreso", "Fecha Estimada", "Estado"),
+    show="headings",
+    height=10
+)
+tree_reparaciones.pack(side="left", fill="both", expand=True)
+
+# Configurar encabezados de columnas
+tree_reparaciones.heading("ID", text="ID Reparación")
+tree_reparaciones.heading("Cliente", text="Cliente")
+tree_reparaciones.heading("Marca", text="Marca")
+tree_reparaciones.heading("Modelo", text="Modelo")
+tree_reparaciones.heading("Fecha Ingreso", text="Fecha Ingreso")
+tree_reparaciones.heading("Fecha Estimada", text="Fecha Estimada")
+tree_reparaciones.heading("Estado", text="Estado")
+
+# Configurar tamaño de las columnas
+tree_reparaciones.column("ID", width=100, anchor="center")
+tree_reparaciones.column("Cliente", width=150, anchor="center")
+tree_reparaciones.column("Marca", width=100, anchor="center")
+tree_reparaciones.column("Modelo", width=100, anchor="center")
+tree_reparaciones.column("Fecha Ingreso", width=120, anchor="center")
+tree_reparaciones.column("Fecha Estimada", width=120, anchor="center")
+tree_reparaciones.column("Estado", width=100, anchor="center")
+
+# Añadir barra de desplazamiento para el Treeview
+scroll_reparaciones = Scrollbar(frame_reparaciones, orient="vertical", command=tree_reparaciones.yview)
+scroll_reparaciones.pack(side="right", fill="y")
+tree_reparaciones.config(yscrollcommand=scroll_reparaciones.set)
+
 # Frame para selección de cliente y celular
 frame_seleccion = Frame(root)
 frame_seleccion.pack(pady=10)
@@ -137,39 +185,22 @@ Label(frame_seleccion, text="Selecciona un Celular:").grid(row=0, column=1, padx
 lista_celulares = Listbox(frame_seleccion, width=30)
 lista_celulares.grid(row=1, column=1, padx=5)
 
-# Frame para datos de reparación
-frame_reparacion = Frame(root)
-frame_reparacion.pack(pady=10)
+# Otros widgets y configuraciones para fechas
+frame_fechas = Frame(root)
+frame_fechas.pack(pady=10)
 
-Label(frame_reparacion, text="Fecha Ingreso:").grid(row=0, column=0, padx=5)
-entry_fecha_ingreso = Entry(frame_reparacion, width=15)
+Label(frame_fechas, text="Fecha de Ingreso:").grid(row=0, column=0, padx=5)
+entry_fecha_ingreso = Entry(frame_fechas)
 entry_fecha_ingreso.grid(row=0, column=1, padx=5)
-entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))
+Button(frame_fechas, text="Seleccionar Fecha", command=lambda: abrir_calendario(entry_fecha_ingreso)).grid(row=0, column=2, padx=5)
 
-Button(frame_reparacion, text="📅", command=lambda: abrir_calendario(entry_fecha_ingreso)).grid(row=0, column=2, padx=5)
-
-Label(frame_reparacion, text="Fecha Estimada de Entrega:").grid(row=1, column=0, padx=5)
-entry_fecha_estimada_entrega = Entry(frame_reparacion, width=15)
+Label(frame_fechas, text="Fecha Estimada de Entrega:").grid(row=1, column=0, padx=5)
+entry_fecha_estimada_entrega = Entry(frame_fechas)
 entry_fecha_estimada_entrega.grid(row=1, column=1, padx=5)
+Button(frame_fechas, text="Seleccionar Fecha", command=lambda: abrir_calendario(entry_fecha_estimada_entrega)).grid(row=1, column=2, padx=5)
 
-Button(frame_reparacion, text="📅", command=lambda: abrir_calendario(entry_fecha_estimada_entrega)).grid(row=1, column=2, padx=5)
-
-Button(frame_reparacion, text="Registrar Reparación", command=crear_reparacion).grid(row=2, column=0, columnspan=3, pady=10)
-
-# Frame para la grilla de reparaciones
-frame_reparaciones = Frame(root)
-frame_reparaciones.pack(pady=10)
-
-tree_reparaciones = Treeview(frame_reparaciones, columns=("ID", "Cliente", "Marca", "Modelo", "Ingreso", "Entrega", "Estado"), show="headings", height=10)
-tree_reparaciones.pack(side="left")
-
-for col in tree_reparaciones["columns"]:
-    tree_reparaciones.heading(col, text=col)
-    tree_reparaciones.column(col, width=120)
-
-scrollbar = Scrollbar(frame_reparaciones, orient="vertical", command=tree_reparaciones.yview)
-scrollbar.pack(side="right", fill="y")
-tree_reparaciones.config(yscrollcommand=scrollbar.set)
+# Botón para registrar reparación
+Button(root, text="Registrar Reparación", command=crear_reparacion).pack(pady=10)
 
 # Cargar datos iniciales
 cargar_clientes()
