@@ -36,10 +36,10 @@ def mostrar_clientes():
 # Actualizar Cliente
 def actualizar_cliente():
     try:
-        id_cliente = int(entry_id.get())
+        id_cliente = entry_id.get()  # Obtener id_cliente desde el campo entry_id (que ahora está enabled temporalmente)
         nombre = entry_nombre.get()
         contacto = entry_contacto.get()
-        if nombre and contacto:
+        if id_cliente and nombre and contacto:
             conn = conectar_db()
             cursor = conn.cursor()
             cursor.execute("UPDATE clientes SET nombre=%s, contacto=%s WHERE id_cliente=%s", (nombre, contacto, id_cliente))
@@ -58,17 +58,20 @@ def actualizar_cliente():
 # Eliminar Cliente
 def eliminar_cliente():
     try:
-        id_cliente = int(entry_id.get())
-        conn = conectar_db()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM clientes WHERE id_cliente=%s", (id_cliente,))
-        conn.commit()
-        conn.close()
-        messagebox.showinfo("Éxito", "Cliente eliminado exitosamente.")
-        entry_id.delete(0, END)
-        entry_nombre.delete(0, END)
-        entry_contacto.delete(0, END)
-        mostrar_clientes()
+        id_cliente = entry_id.get()  # Obtener id_cliente desde el campo entry_id
+        if id_cliente:
+            conn = conectar_db()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM clientes WHERE id_cliente=%s", (id_cliente,))
+            conn.commit()
+            conn.close()
+            messagebox.showinfo("Éxito", "Cliente eliminado exitosamente.")
+            entry_id.delete(0, END)
+            entry_nombre.delete(0, END)
+            entry_contacto.delete(0, END)
+            mostrar_clientes()
+        else:
+            messagebox.showwarning("Advertencia", "Por favor, selecciona un cliente.")
     except ValueError:
         messagebox.showerror("Error", "Por favor, selecciona un cliente válido.")
 
@@ -76,8 +79,10 @@ def eliminar_cliente():
 def seleccionar_cliente(event):
     seleccion = lista_clientes.get(lista_clientes.curselection())
     id_cliente, nombre, contacto = seleccion.split(" - ")
+    entry_id.config(state="normal")  # Habilitar temporalmente el campo entry_id
     entry_id.delete(0, END)
     entry_id.insert(END, id_cliente)
+    entry_id.config(state="readonly")  # Volver a desactivar el campo entry_id para evitar ediciones accidentales
     entry_nombre.delete(0, END)
     entry_nombre.insert(END, nombre)
     entry_contacto.delete(0, END)
@@ -88,10 +93,9 @@ root = Tk()
 root.title("Gestión de Clientes")
 root.geometry("400x400")
 
-# Widgets para el CRUD de Clientes
-Label(root, text="ID Cliente").pack()
-entry_id = Entry(root)
-entry_id.pack()
+# Widgets para el CRUD de Clientes (campo de entrada para ID Cliente en estado readonly)
+entry_id = Entry(root, state="readonly")  # Almacena el ID del cliente seleccionado
+entry_id.pack_forget()  # Ocultar entry_id, ya que solo se usa internamente para seleccionar el ID
 
 Label(root, text="Nombre").pack()
 entry_nombre = Entry(root)

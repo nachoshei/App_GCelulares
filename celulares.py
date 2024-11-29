@@ -1,29 +1,16 @@
 from config import conectar_db
-from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebox
+from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebox, StringVar, OptionMenu
 
-# Crear Celular
-def crear_celular():
-    try:
-        id_cliente = int(entry_id_cliente.get())
-        marca = entry_marca.get()
-        modelo = entry_modelo.get()
-        if id_cliente and marca and modelo:
-            conn = conectar_db()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO celulares (id_cliente, marca, modelo) VALUES (%s, %s, %s)", (id_cliente, marca, modelo))
-            conn.commit()
-            conn.close()
-            messagebox.showinfo("Éxito", "Celular registrado con éxito.")
-            entry_id_cliente.delete(0, END)
-            entry_marca.delete(0, END)
-            entry_modelo.delete(0, END)
-            mostrar_celulares()
-        else:
-            messagebox.showwarning("Advertencia", "Por favor, completa todos los campos.")
-    except ValueError:
-        messagebox.showerror("Error", "El ID del cliente debe ser un número.")
+# Función para obtener lista de clientes con sus nombres e IDs
+def obtener_clientes():
+    conn = conectar_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_cliente, nombre FROM clientes")
+    clientes = cursor.fetchall()
+    conn.close()
+    return clientes
 
-# Leer Celulares
+# Función para obtener lista de celulares
 def obtener_celulares():
     conn = conectar_db()
     cursor = conn.cursor()
@@ -36,6 +23,28 @@ def obtener_celulares():
     conn.close()
     return celulares
 
+# Crear Celular
+def crear_celular():
+    try:
+        cliente_seleccionado = opcion_cliente.get()
+        id_cliente = cliente_dict.get(cliente_seleccionado)
+        marca = entry_marca.get()
+        modelo = entry_modelo.get()
+        if id_cliente and marca and modelo:
+            conn = conectar_db()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO celulares (id_cliente, marca, modelo) VALUES (%s, %s, %s)", (id_cliente, marca, modelo))
+            conn.commit()
+            conn.close()
+            messagebox.showinfo("Éxito", "Celular registrado con éxito.")
+            entry_marca.delete(0, END)
+            entry_modelo.delete(0, END)
+            mostrar_celulares()
+        else:
+            messagebox.showwarning("Advertencia", "Por favor, completa todos los campos.")
+    except ValueError:
+        messagebox.showerror("Error", "Por favor, selecciona un cliente válido.")
+
 # Mostrar Celulares en Listbox
 def mostrar_celulares():
     lista_celulares.delete(0, END)
@@ -46,7 +55,8 @@ def mostrar_celulares():
 def actualizar_celular():
     try:
         id_celular = int(entry_id.get())
-        id_cliente = int(entry_id_cliente.get())
+        cliente_seleccionado = opcion_cliente.get()
+        id_cliente = cliente_dict.get(cliente_seleccionado)
         marca = entry_marca.get()
         modelo = entry_modelo.get()
         if id_cliente and marca and modelo:
@@ -57,14 +67,13 @@ def actualizar_celular():
             conn.close()
             messagebox.showinfo("Éxito", "Celular actualizado exitosamente.")
             entry_id.delete(0, END)
-            entry_id_cliente.delete(0, END)
             entry_marca.delete(0, END)
             entry_modelo.delete(0, END)
             mostrar_celulares()
         else:
             messagebox.showwarning("Advertencia", "Por favor, completa todos los campos.")
     except ValueError:
-        messagebox.showerror("Error", "ID del celular y del cliente deben ser números.")
+        messagebox.showerror("Error", "Por favor, selecciona un celular y un cliente válidos.")
 
 # Eliminar Celular
 def eliminar_celular():
@@ -77,7 +86,6 @@ def eliminar_celular():
         conn.close()
         messagebox.showinfo("Éxito", "Celular eliminado exitosamente.")
         entry_id.delete(0, END)
-        entry_id_cliente.delete(0, END)
         entry_marca.delete(0, END)
         entry_modelo.delete(0, END)
         mostrar_celulares()
@@ -89,9 +97,8 @@ def seleccionar_celular(event):
     seleccion = lista_celulares.get(lista_celulares.curselection())
     id_celular, cliente_nombre, marca, modelo = seleccion.split(" - ")
     entry_id.delete(0, END)
-    entry_id.insert(END, id_celular)
-    entry_id_cliente.delete(0, END)
-    entry_id_cliente.insert(END, cliente_nombre)  # Para mostrar cliente de referencia, si se desea otro dato, cambiar aquí
+    entry_id.insert(END, id_celular)  # Almacenar el ID internamente
+    opcion_cliente.set(cliente_nombre)  # Selecciona el nombre en el menú desplegable
     entry_marca.delete(0, END)
     entry_marca.insert(END, marca)
     entry_modelo.delete(0, END)
@@ -102,14 +109,20 @@ root = Tk()
 root.title("Gestión de Celulares")
 root.geometry("500x500")
 
-# Widgets para el CRUD de Celulares
-Label(root, text="ID Celular").pack()
+# Campo oculto para almacenar ID del celular (sin label ni pack para ocultarlo)
 entry_id = Entry(root)
-entry_id.pack()
+entry_id.pack_forget()
 
-Label(root, text="ID Cliente").pack()
-entry_id_cliente = Entry(root)
-entry_id_cliente.pack()
+# Crear menú desplegable para seleccionar cliente
+Label(root, text="Cliente").pack()
+opcion_cliente = StringVar()
+opcion_cliente.set("Seleccionar Cliente")  # Texto inicial del menú
+
+# Cargar clientes en un diccionario para acceder al ID por nombre
+clientes = obtener_clientes()
+cliente_dict = {cliente[1]: cliente[0] for cliente in clientes}  # Diccionario nombre -> id_cliente
+dropdown_cliente = OptionMenu(root, opcion_cliente, *cliente_dict.keys())  # Menú desplegable con nombres de clientes
+dropdown_cliente.pack()
 
 Label(root, text="Marca").pack()
 entry_marca = Entry(root)
