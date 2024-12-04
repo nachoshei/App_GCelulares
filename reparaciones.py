@@ -23,12 +23,14 @@ def cargar_celulares(event):
     global id_cliente_seleccionado, id_celular_seleccionado
 
     seleccion_cliente = lista_clientes.curselection()
-    if not seleccion_cliente:
-        messagebox.showwarning("Advertencia", "Por favor, selecciona un cliente.")
-        return
-
+    
     seleccion_texto = lista_clientes.get(seleccion_cliente)
     id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Extraer el ID del cliente
+    
+    if not id_cliente_seleccionado:
+        messagebox.showwarning("Advertencia", "Por favor, selecciona un cliente.")
+        return
+    
     conn = conectar_db()
     cursor = conn.cursor()
     cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente_seleccionado,))
