@@ -3,11 +3,11 @@ from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebo
 from tkcalendar import Calendar
 from datetime import datetime
 
-# Variable global para almacenar el ID del cliente seleccionado
+# Variables globales
 id_cliente_seleccionado = None
-id_celular = None
+id_celular_seleccionado = None
 
-# Cargar clientes en el Listbox
+# Función para cargar clientes en el Listbox
 def cargar_clientes():
     lista_clientes.delete(0, END)
     conn = conectar_db()
@@ -18,88 +18,68 @@ def cargar_clientes():
     for cliente in clientes:
         lista_clientes.insert(END, f"{cliente[0]} - {cliente[1]}")
 
-# Cargar celulares del cliente seleccionado
+# Función para cargar celulares del cliente seleccionado
 def cargar_celulares(event):
-    global id_cliente_seleccionado
-    global id_celular    
-    try:
-        #lista_celulares.delete(0, END)
-        seleccion_cliente = lista_clientes.curselection()
-        
-        # Asegurarse de que solo se actualice el cliente si cambia la selección
-        if seleccion_cliente:
-            seleccion_texto = lista_clientes.get(seleccion_cliente)
-            id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Guardar ID del cliente seleccionado
-        else:
-            id_cliente_seleccionado = None
-            return
+    global id_cliente_seleccionado, id_celular_seleccionado
 
-        # Verificar si hay un cliente seleccionado antes de cargar celulares
-        if id_cliente_seleccionado:
-            conn = conectar_db()
-            cursor = conn.cursor()
-            cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente_seleccionado,))
-            lista_celulares.delete(0, END)
-            celulares = cursor.fetchall()
-            conn.close()
-            for celular in celulares:
-                lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
-            
-            try:
-                # Verificar si hay un celular seleccionado
-                seleccion_celular = lista_celulares.curselection()
-            
-            #Obtener los datos del celular seleccionado
-                seleccion_texto = lista_celulares.get(seleccion_celular)
-                id_celular = seleccion_texto.split(" - ")[0]
-            
-                if not seleccion_celular:
-                    messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
-                    return
-            except Exception as e:
-                messagebox.showerror("Error",f"Ocurrió un error al cargar celulares: {e}")
-        
+    seleccion_cliente = lista_clientes.curselection()
+    
+    seleccion_texto = lista_clientes.get(seleccion_cliente)
+    id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Extraer el ID del cliente
+    
+    if not id_cliente_seleccionado:
+        messagebox.showwarning("Advertencia", "Por favor, selecciona un cliente.")
+        return
+    
+    conn = conectar_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente_seleccionado,))
+    celulares = cursor.fetchall()
+    conn.close()
 
-            
-    except Exception as e:
-        messagebox.showerror("Error", f"Ocurrió un error al cargar Clientes: {e}")
+    lista_celulares.delete(0, END)
+    for celular in celulares:
+        lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
 
-# Crear una nueva reparación
+# Función para crear una nueva reparación
 def crear_reparacion():
+    global id_celular_seleccionado
+
+    seleccion_celular = lista_celulares.curselection()
+    if not seleccion_celular:
+        messagebox.showwarning("Advertencia", "Por favor, selecciona un celular.")
+        return
+
+    seleccion_texto = lista_celulares.get(seleccion_celular)
+    id_celular_seleccionado = seleccion_texto.split(" - ")[0]  # Extraer el ID del celular
+
+    # Obtener datos de la reparación
+    fecha_ingreso = entry_fecha_ingreso.get()
+    fecha_estimada_entrega = entry_fecha_estimada_entrega.get()
+    estado = entry_estado.get()
+
+    if not fecha_ingreso or not fecha_estimada_entrega or not estado:
+        messagebox.showwarning("Advertencia", "Por favor, completa todos los campos.")
+        return
+
+    # Insertar la reparación en la base de datos
     try:
-        # Verificar si hay un celular seleccionado
-        #seleccion = lista_celulares.curselection()
-        #if not seleccion:
-        #    messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
-        #    return
-        
-        # Obtener los datos del celular seleccionado
-        #seleccion_celular = lista_celulares.get(seleccion)
-        #id_celular = seleccion_celular.split(" - ")[0]
-
-        # Obtener los datos de la reparación
-        fecha_ingreso = entry_fecha_ingreso.get()
-        fecha_estimada_entrega = entry_fecha_estimada_entrega.get()
-        estado = entry_estado.get()
-
-        # Insertar en la base de datos
         conn = conectar_db()
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO reparaciones (id_celular, fecha_ingreso, fecha_estimada_entrega, estado) VALUES (%s, %s, %s, %s)",
-            (id_celular, fecha_ingreso, fecha_estimada_entrega, estado),
+            (id_celular_seleccionado, fecha_ingreso, fecha_estimada_entrega, estado),
         )
         conn.commit()
         conn.close()
 
-        # Notificar éxito y limpiar campos
-        messagebox.showinfo("Éxito", "Reparación creada exitosamente.")
+        messagebox.showinfo("Éxito", "Reparación registrada exitosamente.")
         limpiar_campos()
         mostrar_reparaciones()
     except Exception as e:
-        messagebox.showerror("Error", f"Ocurrió un error: {e}")
+        messagebox.showerror("Error", f"Ocurrió un error al guardar la reparación: {e}")
 
-# Mostrar reparaciones
+# Función para mostrar reparaciones en la lista
 def mostrar_reparaciones():
     lista_reparaciones.delete(0, END)
     conn = conectar_db()
@@ -113,21 +93,18 @@ def mostrar_reparaciones():
     """)
     reparaciones = cursor.fetchall()
     conn.close()
+
     for reparacion in reparaciones:
         lista_reparaciones.insert(END, f"{reparacion[0]} - Cliente: {reparacion[1]} - Celular: {reparacion[2]} {reparacion[3]} - "
                                        f"Ingreso: {reparacion[4]} - Est. Entrega: {reparacion[5]} - Estado: {reparacion[6]}")
 
-# Limpiar campos
+# Función para limpiar los campos y mantener las selecciones
 def limpiar_campos():
-    global id_cliente_seleccionado
     entry_fecha_ingreso.delete(0, END)
     entry_fecha_estimada_entrega.delete(0, END)
     entry_estado.delete(0, END)
-    lista_clientes.selection_clear(0, END)
-    lista_celulares.delete(0, END)
-    id_cliente_seleccionado = None
 
-# Seleccionar fecha estimada de entrega con un calendario
+# Función para abrir el calendario
 def abrir_calendario():
     def seleccionar_fecha():
         entry_fecha_estimada_entrega.delete(0, END)
@@ -145,22 +122,20 @@ root = Tk()
 root.title("Gestión de Reparaciones")
 root.geometry("800x700")
 
-# Frame para selección de cliente y celular
+# Sección de selección de clientes y celulares
 frame_seleccion = Frame(root)
 frame_seleccion.pack(pady=10)
 
-# Listbox para seleccionar cliente
 Label(frame_seleccion, text="Selecciona un Cliente:").grid(row=0, column=0)
 lista_clientes = Listbox(frame_seleccion, width=30)
 lista_clientes.grid(row=1, column=0, padx=10)
 lista_clientes.bind("<<ListboxSelect>>", cargar_celulares)
 
-# Listbox para seleccionar celular del cliente
 Label(frame_seleccion, text="Selecciona un Celular:").grid(row=0, column=1)
 lista_celulares = Listbox(frame_seleccion, width=30)
 lista_celulares.grid(row=1, column=1, padx=10)
 
-# Widgets para los datos de la reparación
+# Sección para los datos de la reparación
 Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
 entry_fecha_ingreso = Entry(root)
 entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))
@@ -183,11 +158,13 @@ Label(root, text="Reparaciones Registradas:").pack()
 lista_reparaciones = Listbox(root, width=80)
 lista_reparaciones.pack(pady=10)
 
+# Scrollbar para las reparaciones
 scrollbar = Scrollbar(root)
 scrollbar.pack(side="right", fill="y")
 lista_reparaciones.config(yscrollcommand=scrollbar.set)
 scrollbar.config(command=lista_reparaciones.yview)
 
+# Cargar datos iniciales
 cargar_clientes()
 mostrar_reparaciones()
 
