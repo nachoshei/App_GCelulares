@@ -3,6 +3,9 @@ from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebo
 from tkcalendar import Calendar
 from datetime import datetime
 
+# Variable global para almacenar el ID del cliente seleccionado
+id_cliente_seleccionado = None
+
 # Cargar clientes en el Listbox
 def cargar_clientes():
     lista_clientes.delete(0, END)
@@ -16,37 +19,69 @@ def cargar_clientes():
 
 # Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
+    global id_cliente_seleccionado
+    global id_celular
+    global id_cliente_seleccionado
     try:
-        lista_celulares.delete(0, END)
-        seleccion = lista_clientes.curselection()  # Obtener selección
-        if not seleccion:  # Validar si hay una selección
-            messagebox.showwarning("Advertencia", "Por favor, selecciona un cliente de la lista.")
+        #lista_celulares.delete(0, END)
+        seleccion = lista_clientes.curselection()
+        
+        # Asegurarse de que solo se actualice el cliente si cambia la selección
+        if seleccion:
+            seleccion_texto = lista_clientes.get(seleccion)
+            id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Guardar ID del cliente seleccionado
+        else:
+            id_cliente_seleccionado = None
             return
-        seleccion_texto = lista_clientes.get(seleccion)
-        id_cliente = seleccion_texto.split(" - ")[0]
-        conn = conectar_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente,))
-        celulares = cursor.fetchall()
-        conn.close()
-        for celular in celulares:
-            lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
+
+        # Verificar si hay un cliente seleccionado antes de cargar celulares
+        if id_cliente_seleccionado:
+            conn = conectar_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id_celular, marca, modelo FROM celulares WHERE id_cliente=%s", (id_cliente_seleccionado,))
+            lista_celulares.delete(0, END)
+            celulares = cursor.fetchall()
+            conn.close()
+            for celular in celulares:
+                lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
+            
+            #guardamos el movil seleccionado de la lista de celulares
+            #seleccion_movil = lista_celulares.curselection()
+            #if seleccion_movil:
+            #    seleccion_celular = lista_celulares.get(seleccion_movil)
+            #    id_celular_seleccionado = seleccion_celular.split(" - ")[0]  # Guardar ID del celular seleccionado
+            #else:
+            #    id_celular_seleccionado = None
+            #    return
+            
+            # Verificar si hay un celular seleccionado
+            seleccion = lista_celulares.curselection()
+            
+            #Obtener los datos del celular seleccionado
+            seleccion_celular = lista_celulares.get(seleccion)
+            id_celular = seleccion_celular.split(" - ")[0]
+            
+            if not seleccion:
+                messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
+                return
+        
+
+            
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al cargar celulares: {e}")
 
 # Crear una nueva reparación
-
 def crear_reparacion():
     try:
         # Verificar si hay un celular seleccionado
-        seleccion = lista_celulares.curselection()
-        if not seleccion:  # Si no hay selección
-            messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
-            return
+        #seleccion = lista_celulares.curselection()
+        #if not seleccion:
+        #    messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
+        #    return
         
         # Obtener los datos del celular seleccionado
-        seleccion_celular = lista_celulares.get(seleccion)
-        id_celular = seleccion_celular.split(" - ")[0]
+        #seleccion_celular = lista_celulares.get(seleccion)
+        #id_celular = seleccion_celular.split(" - ")[0]
 
         # Obtener los datos de la reparación
         fecha_ingreso = entry_fecha_ingreso.get()
@@ -90,11 +125,13 @@ def mostrar_reparaciones():
 
 # Limpiar campos
 def limpiar_campos():
+    global id_cliente_seleccionado
     entry_fecha_ingreso.delete(0, END)
     entry_fecha_estimada_entrega.delete(0, END)
     entry_estado.delete(0, END)
     lista_clientes.selection_clear(0, END)
     lista_celulares.delete(0, END)
+    id_cliente_seleccionado = None
 
 # Seleccionar fecha estimada de entrega con un calendario
 def abrir_calendario():
@@ -132,38 +169,32 @@ lista_celulares.grid(row=1, column=1, padx=10)
 # Widgets para los datos de la reparación
 Label(root, text="Fecha Ingreso (YYYY-MM-DD):").pack()
 entry_fecha_ingreso = Entry(root)
-entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))  # Fecha actual
+entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))
 entry_fecha_ingreso.pack()
 
 Label(root, text="Fecha Estimada de Entrega (YYYY-MM-DD):").pack()
 entry_fecha_estimada_entrega = Entry(root)
 entry_fecha_estimada_entrega.pack()
 
-# Botón de calendario junto a la fecha estimada
 Button(root, text="📅", command=abrir_calendario).pack()
 
 Label(root, text="Estado:").pack()
 entry_estado = Entry(root)
-entry_estado.insert(0, "En proceso")  # Valor predeterminado
+entry_estado.insert(0, "En proceso")
 entry_estado.pack()
 
-# Botón para agregar reparación
 Button(root, text="Agregar Reparación", command=crear_reparacion).pack(pady=10)
 
-# Listbox para mostrar reparaciones
 Label(root, text="Reparaciones Registradas:").pack()
 lista_reparaciones = Listbox(root, width=80)
 lista_reparaciones.pack(pady=10)
 
-# Scrollbar para el Listbox
 scrollbar = Scrollbar(root)
 scrollbar.pack(side="right", fill="y")
 lista_reparaciones.config(yscrollcommand=scrollbar.set)
 scrollbar.config(command=lista_reparaciones.yview)
 
-# Cargar datos iniciales
 cargar_clientes()
 mostrar_reparaciones()
 
-# Iniciar loop de Tkinter
 root.mainloop()
