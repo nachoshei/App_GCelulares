@@ -5,6 +5,7 @@ from datetime import datetime
 
 # Variable global para almacenar el ID del cliente seleccionado
 id_cliente_seleccionado = None
+id_celular = None
 
 # Cargar clientes en el Listbox
 def cargar_clientes():
@@ -20,8 +21,7 @@ def cargar_clientes():
 # Cargar celulares del cliente seleccionado
 def cargar_celulares(event):
     global id_cliente_seleccionado
-    global id_celular
-    global id_cliente_seleccionado
+    global id_celular    
     try:
         #lista_celulares.delete(0, END)
         seleccion_cliente = lista_clientes.curselection()
@@ -45,21 +45,24 @@ def cargar_celulares(event):
             for celular in celulares:
                 lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
             
-            # Verificar si hay un celular seleccionado
-            seleccion_celular = lista_celulares.curselection()
+            try:
+                # Verificar si hay un celular seleccionado
+                seleccion_celular = lista_celulares.curselection()
             
             #Obtener los datos del celular seleccionado
-            seleccion_texto = lista_celulares.get(seleccion_celular)
-            id_celular = seleccion_texto.split(" - ")[0]
+                seleccion_texto = lista_celulares.get(seleccion_celular)
+                id_celular = seleccion_texto.split(" - ")[0]
             
-            if not seleccion:
-                messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
-                return
+                if not seleccion_celular:
+                    messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
+                    return
+            except Exception as e:
+                messagebox.showerror("Error",f"Ocurrió un error al cargar celulares: {e}")
         
 
             
     except Exception as e:
-        messagebox.showerror("Error", f"Ocurrió un error al cargar celulares: {e}")
+        messagebox.showerror("Error", f"Ocurrió un error al cargar Clientes: {e}")
 
 # Crear una nueva reparación
 def crear_reparacion():
