@@ -30,19 +30,30 @@ def cargar_celulares(event):
         celulares = cursor.fetchall()
         conn.close()
         for celular in celulares:
-            lista_celulares.insert(END, f"{celular[0]} - {celular[1]} {celular[2]}")
+            lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al cargar celulares: {e}")
 
 # Crear una nueva reparación
+
 def crear_reparacion():
     try:
-        seleccion_celular = lista_celulares.get(lista_celulares.curselection())
+        # Verificar si hay un celular seleccionado
+        seleccion = lista_celulares.curselection()
+        if not seleccion:  # Si no hay selección
+            messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
+            return
+        
+        # Obtener los datos del celular seleccionado
+        seleccion_celular = lista_celulares.get(seleccion)
         id_celular = seleccion_celular.split(" - ")[0]
+
+        # Obtener los datos de la reparación
         fecha_ingreso = entry_fecha_ingreso.get()
         fecha_estimada_entrega = entry_fecha_estimada_entrega.get()
         estado = entry_estado.get()
 
+        # Insertar en la base de datos
         conn = conectar_db()
         cursor = conn.cursor()
         cursor.execute(
@@ -52,6 +63,7 @@ def crear_reparacion():
         conn.commit()
         conn.close()
 
+        # Notificar éxito y limpiar campos
         messagebox.showinfo("Éxito", "Reparación creada exitosamente.")
         limpiar_campos()
         mostrar_reparaciones()
