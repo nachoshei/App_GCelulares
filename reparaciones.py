@@ -24,11 +24,11 @@ def cargar_celulares(event):
     global id_cliente_seleccionado
     try:
         #lista_celulares.delete(0, END)
-        seleccion = lista_clientes.curselection()
+        seleccion_cliente = lista_clientes.curselection()
         
         # Asegurarse de que solo se actualice el cliente si cambia la selección
-        if seleccion:
-            seleccion_texto = lista_clientes.get(seleccion)
+        if seleccion_cliente:
+            seleccion_texto = lista_clientes.get(seleccion_cliente)
             id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Guardar ID del cliente seleccionado
         else:
             id_cliente_seleccionado = None
@@ -45,21 +45,12 @@ def cargar_celulares(event):
             for celular in celulares:
                 lista_celulares.insert(END, f"{celular[0]} - {celular[1]} - {celular[2]}")
             
-            #guardamos el movil seleccionado de la lista de celulares
-            #seleccion_movil = lista_celulares.curselection()
-            #if seleccion_movil:
-            #    seleccion_celular = lista_celulares.get(seleccion_movil)
-            #    id_celular_seleccionado = seleccion_celular.split(" - ")[0]  # Guardar ID del celular seleccionado
-            #else:
-            #    id_celular_seleccionado = None
-            #    return
-            
             # Verificar si hay un celular seleccionado
-            seleccion = lista_celulares.curselection()
+            seleccion_celular = lista_celulares.curselection()
             
             #Obtener los datos del celular seleccionado
-            seleccion_celular = lista_celulares.get(seleccion)
-            id_celular = seleccion_celular.split(" - ")[0]
+            seleccion_texto = lista_celulares.get(seleccion_celular)
+            id_celular = seleccion_texto.split(" - ")[0]
             
             if not seleccion:
                 messagebox.showwarning("Advertencia", "Por favor, selecciona un celular de la lista.")
