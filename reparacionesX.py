@@ -9,7 +9,7 @@ id_celular_seleccionado = None
 
 # Cargar clientes en el Listbox
 def cargar_clientes():
-    #lista_clientes.delete(0, END)
+    lista_clientes.delete(0, END)
     conn = conectar_db()
     cursor = conn.cursor()
     cursor.execute("SELECT id_cliente, nombre FROM clientes")

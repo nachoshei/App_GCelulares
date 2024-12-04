@@ -1,0 +1,1 @@
+#lista_celulares.delete(0, END)
