@@ -1,5 +1,6 @@
 from config import conectar_db
 from tkinter import Tk, Label, Entry, Button, Listbox, Scrollbar, END, messagebox, Frame
+from tkinter import ttk
 from tkcalendar import Calendar
 from datetime import datetime
 
@@ -23,7 +24,6 @@ def cargar_celulares(event):
     global id_cliente_seleccionado, id_celular_seleccionado
 
     seleccion_cliente = lista_clientes.curselection()
-    
     seleccion_texto = lista_clientes.get(seleccion_cliente)
     id_cliente_seleccionado = seleccion_texto.split(" - ")[0]  # Extraer el ID del cliente
     
@@ -79,9 +79,9 @@ def crear_reparacion():
     except Exception as e:
         messagebox.showerror("Error", f"Ocurrió un error al guardar la reparación: {e}")
 
-# Función para mostrar reparaciones en la lista
+# Función para mostrar reparaciones en el Treeview
 def mostrar_reparaciones():
-    lista_reparaciones.delete(0, END)
+    tree_reparaciones.delete(*tree_reparaciones.get_children())
     conn = conectar_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -95,14 +95,17 @@ def mostrar_reparaciones():
     conn.close()
 
     for reparacion in reparaciones:
-        lista_reparaciones.insert(END, f"{reparacion[0]} - Cliente: {reparacion[1]} - Celular: {reparacion[2]} {reparacion[3]} - "
-                                       f"Ingreso: {reparacion[4]} - Est. Entrega: {reparacion[5]} - Estado: {reparacion[6]}")
+        tree_reparaciones.insert("", END, values=(
+            reparacion[0], reparacion[1], reparacion[2], reparacion[3], reparacion[4], reparacion[5], reparacion[6]
+        ))
 
 # Función para limpiar los campos y mantener las selecciones
 def limpiar_campos():
     entry_fecha_ingreso.delete(0, END)
+    entry_fecha_ingreso.insert(0, datetime.now().strftime("%Y-%m-%d"))
     entry_fecha_estimada_entrega.delete(0, END)
     entry_estado.delete(0, END)
+    entry_estado.insert(0, "En proceso")
 
 # Función para abrir el calendario
 def abrir_calendario():
@@ -120,7 +123,7 @@ def abrir_calendario():
 # Configuración de la ventana principal
 root = Tk()
 root.title("Gestión de Reparaciones")
-root.geometry("800x700")
+root.geometry("900x700")
 
 # Sección de selección de clientes y celulares
 frame_seleccion = Frame(root)
@@ -154,15 +157,15 @@ entry_estado.pack()
 
 Button(root, text="Agregar Reparación", command=crear_reparacion).pack(pady=10)
 
-Label(root, text="Reparaciones Registradas:").pack()
-lista_reparaciones = Listbox(root, width=80)
-lista_reparaciones.pack(pady=10)
+# Configurar el Treeview para mostrar reparaciones
+columns = ("ID", "Cliente", "Marca", "Modelo", "Fecha Ingreso", "Fecha Estimada", "Estado")
+tree_reparaciones = ttk.Treeview(root, columns=columns, show="headings", height=15)
 
-# Scrollbar para las reparaciones
-scrollbar = Scrollbar(root)
-scrollbar.pack(side="right", fill="y")
-lista_reparaciones.config(yscrollcommand=scrollbar.set)
-scrollbar.config(command=lista_reparaciones.yview)
+for col in columns:
+    tree_reparaciones.heading(col, text=col)
+    tree_reparaciones.column(col, width=120, anchor="center")
+
+tree_reparaciones.pack(pady=10, fill="x")
 
 # Cargar datos iniciales
 cargar_clientes()
